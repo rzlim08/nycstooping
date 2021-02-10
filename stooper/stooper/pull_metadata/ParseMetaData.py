@@ -3,6 +3,7 @@ import sys
 from stooper.pull_metadata.LocationData import LocationData
 from stooper.stooper_rest_framework.models import PostLocation
 from stooper import secrets
+from datetime import datetime
 import requests
 
 
@@ -22,7 +23,7 @@ class MetaDataParser:
     def extract_relevant_info(self):
         images = []
         for image_json in self.json["GraphImages"]:
-            if PostLocation.object.filter(id=image_json["id"]).exists():
+            if PostLocation.objects.filter(id=image_json["id"]).exists():
                 continue
             subdict = {
                 k: v
@@ -96,6 +97,7 @@ class InstagramPost:
             )
         ).json()
         if len(response["results"]) == 0:
+            print("Failed google results: ", response)
             return None
         else:
             best_res = response["results"][0]
@@ -128,7 +130,7 @@ class InstagramPost:
         self.location = loc
 
     def timestamp_to_date(self):
-        self.datetime = self.get_meta("taken_at_timestamp")
+        self.datetime = datetime.fromtimestamp(self.get_meta("taken_at_timestamp"))
 
     def add_location_text(self, location_text):
         self.location_text = location_text
