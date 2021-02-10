@@ -1,7 +1,15 @@
-from django.shortcuts import render
 from django.contrib.auth.models import User, Group
 from rest_framework import viewsets, permissions
 from stooper.stooper_rest_framework.serializers import UserSerializer, GroupSerializer
+from stooper.stooper_rest_framework.models import PostLocation
+from stooper.stooper_rest_framework.serializers import PostLocationSerializer
+
+
+class PostLocationViewSet(viewsets.ModelViewSet):
+    queryset = PostLocation.objects.all()
+    serializer_class = PostLocationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
 
 
 class UserViewSet(viewsets.ModelViewSet):
