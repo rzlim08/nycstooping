@@ -148,3 +148,4 @@ media
 settings.py
 migrations
 .idea
+models/

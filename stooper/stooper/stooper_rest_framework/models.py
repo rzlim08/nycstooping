@@ -5,7 +5,7 @@ from django.db import models
 
 class PostLocation(models.Model):
     created = models.DateTimeField(auto_now_add=True)
-    posted_at = models.DateTimeField()
+    posted_at = models.DateTimeField(null=True)
     display_url = models.TextField()
     id = models.TextField(primary_key=True)
     insta_account = models.TextField()
