@@ -149,3 +149,6 @@ settings.py
 migrations
 .idea
 models/
+secrets.py
+*.json
+cookies_aps

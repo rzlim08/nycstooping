@@ -6,15 +6,25 @@ from rest_framework import serializers
 class UserSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = User
-        fields = ['url', 'username', 'email', 'groups']
+        fields = ["url", "username", "email", "groups"]
 
 
 class GroupSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Group
-        fields = ['url', 'name']
+        fields = ["url", "name"]
+
 
 class PostLocationSerializer(serializers.ModelSerializer):
     class Meta:
         model = PostLocation
-        fields = ["id", "created", "posted_at", "display_url", "insta_account", "caption", "lat", "long"]
+        fields = [
+            "id",
+            "created",
+            "posted_at",
+            "display_url",
+            "insta_account",
+            "caption",
+            "lat",
+            "long",
+        ]

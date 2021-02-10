@@ -1,7 +1,7 @@
 import json
 import sys
-from datetime import datetime
 from LocationData import LocationData
+from stooper import secrets
 import requests
 
 
@@ -12,13 +12,9 @@ class MetaDataParser:
         self.jsonfile = jsonfile
         self.json = None
         self.image_meta = None
-        self.boundaries = "bbox=-74.26,40.501,-73.74,40.88"
-        self.proximity = "proximity=-73.9373,40.7643"
-        self.access = "access_token=pk.eyJ1IjoibGltcjEwIiwiYSI6ImNra3Qzc3d4NzB0dnQybnJ0OGpwNGx1Y3MifQ.DVO1tkloVpo9UrAGvokQ0w"
+
         self.read_json()
         self.location_coordinates = []
-        self.google_maps_key = "AIzaSyAk0MzAhyw0_RiDOC7rYYkSUYs7zG_qMfY"
-        self.google_maps_coords = "40.501,-74.26|40.88,-73.74"
 
     def read_json(self):
         with open(self.jsonfile) as f:
@@ -52,89 +48,107 @@ class MetaDataParser:
                 ]["text"]
             else:
                 raise ValueError("more than one caption")
-            images.append(subdict)
+            post = InstagramPost(subdict)
+            post.timestamp_to_date()
+            images.append(post)
         self.image_meta = images
 
-    def timestamp_to_date(self):
-        for image_json in self.image_meta:
-            image_json["datetime"] = datetime.fromtimestamp(
-                image_json["taken_at_timestamp"]
-            )
-
-    def get_location(self):
-        for image_json in self.image_meta:
-            ld = LocationData(image_json["caption"])
+    def get_locations(self):
+        for insta_post in self.image_meta:
+            ld = LocationData(insta_post.get_meta("caption"))
             loc = ld.run_spacy()
             if len(loc) > 0:
-                response_dict = self.call_mapbox(loc)
-                if (len(response_dict["features"]) == 0) or (
-                    response_dict["features"][0]["relevance"] <= 0.5
-                ):
-                    gmaps_response_dict = self.call_google_maps(loc)
-                    if len(gmaps_response_dict["results"]) == 0:
-                        print("Failed: ", image_json["caption"], loc[-1])
-                        continue
-                    best_res = gmaps_response_dict["results"][0]
-                    self.location_coordinates.append(
-                        LocationCoordinates(
-                            image_json["caption"],
-                            best_res["geometry"]["location"],
-                            best_res["formatted_address"],
-                        )
-                    )
-                    print(
-                        "Success! ",
-                        image_json["caption"],
-                        best_res["geometry"]["location"],
-                        best_res["formatted_address"],
-                    )
-                elif response_dict["features"][0]["relevance"] > 0.5:
-                    correct = response_dict["features"][0]
-                    self.location_coordinates.append(
-                        LocationCoordinates(
-                            image_json["caption"],
-                            correct["center"],
-                            correct["place_name"],
-                        )
-                    )
-                    print(
-                        image_json["caption"], correct["center"], correct["place_name"]
-                    )
-        pass
+                insta_post.add_location_text(loc)
+                location_data = insta_post.call_mapbox(loc)
+                if location_data is None:
+                    location_data = insta_post.call_google_maps(loc)
+
+                insta_post.add_location(location_data)
+            else:
+                insta_post.add_location_text(None)
+
+    def __call__(self):
+        self.extract_relevant_info()
+        self.get_locations()
+
+
+class InstagramPost:
+    def __init__(self, subdict):
+        self.subdict = subdict
+        self.boundaries = "bbox=-74.26,40.501,-73.74,40.88"
+        self.proximity = "proximity=-73.9373,40.7643"
+        self.google_maps_coords = "39.501,-74.26|40.88,-73.74"
+        self.datetime = None
+        self.location_text = None
+        self.location = None
+
+    def get_meta(self, fieldname):
+        return self.subdict[fieldname]
 
     def call_google_maps(self, loc):
         response = requests.get(
             "https://maps.googleapis.com/maps/api/geocode/json?address={text}"
             "&{bounding}&key={key}".format(
-                text=loc[0], bounding=self.google_maps_coords, key=self.google_maps_key
+                text=loc[-1],
+                bounding=self.google_maps_coords,
+                key=secrets.return_google_api_key(),
             )
-        )
-        return response.json()
+        ).json()
+        if len(response["results"]) == 0:
+            return None
+        else:
+            best_res = response["results"][0]
+            return LocationCoordinatesGoogle(
+                best_res["geometry"]["location"], best_res["formatted_address"]
+            )
 
     def call_mapbox(self, loc):
         response = requests.get(
-            "https://api.mapbox.com/geocoding/v5/mapbox.places/{text}.json?"
+            "https://api.mapbox.com/geocoding/v4/mapbox.places/{text}.json?"
             "types=address&{boundary}&{proximity}&{access}".format(
-                text=str(loc[0]),
+                text=str(loc[-1]),
                 boundary=self.boundaries,
                 proximity=self.proximity,
-                access=self.access,
+                access=secrets.return_mapbox_key(),
             )
-        )
-        response_dict = response.json()
-        return response_dict
+        ).json()
+        if (len(response["features"]) == 0) or (
+            response["features"][0]["relevance"] <= 0.5
+        ):
+            return None
+        else:
+            correct = response["features"][0]
+            return LocationCoordinatesMapbox(correct["center"], correct["place_name"])
 
-    def __call__(self):
-        self.extract_relevant_info()
-        self.timestamp_to_date()
-        self.get_location()
+    def add_location(self, loc):
+        self.location = loc
+
+    def timestamp_to_date(self):
+        self.datetime = self.get_meta("taken_at_timestamp")
+
+    def add_location_text(self, location_text):
+        self.location_text = location_text
 
 
 class LocationCoordinates:
-    def __init__(self, text, coords, place_name):
-        self.text = text
-        self.coordinates = coords
+    def __init__(self, place_name):
         self.place_name = place_name
+        self.long = None
+        self.lat = None
+
+
+class LocationCoordinatesMapbox(LocationCoordinates):
+    def __init__(self, coords, place_name):
+        super().__init__(place_name)
+        self.long = coords[0]
+        self.lat = coords[1]
+
+
+class LocationCoordinatesGoogle(LocationCoordinates):
+    def __init__(self, coords, place_name):
+        super().__init__(place_name)
+        self.long = coords["lng"]
+        self.lat = coords["lat"]
 
 
 if __name__ == "__main__":
