@@ -1,6 +1,6 @@
 import json
 import sys
-from LocationData import LocationData
+from stooper.pull_metadata.LocationData import LocationData
 from stooper import secrets
 import requests
 
@@ -11,10 +11,8 @@ class MetaDataParser:
     def __init__(self, jsonfile):
         self.jsonfile = jsonfile
         self.json = None
-        self.image_meta = None
-
+        self.image_meta = []
         self.read_json()
-        self.location_coordinates = []
 
     def read_json(self):
         with open(self.jsonfile) as f:
@@ -55,7 +53,7 @@ class MetaDataParser:
 
     def get_locations(self):
         for insta_post in self.image_meta:
-            ld = LocationData(insta_post.get_meta("caption"))
+            ld = LocationData("stooper/pull_metadata/models", insta_post.get_meta("caption"))
             loc = ld.run_spacy()
             if len(loc) > 0:
                 insta_post.add_location_text(loc)
@@ -89,7 +87,7 @@ class InstagramPost:
         response = requests.get(
             "https://maps.googleapis.com/maps/api/geocode/json?address={text}"
             "&{bounding}&key={key}".format(
-                text=loc[-1],
+                text=loc[0],
                 bounding=self.google_maps_coords,
                 key=secrets.return_google_api_key(),
             )
@@ -103,15 +101,18 @@ class InstagramPost:
             )
 
     def call_mapbox(self, loc):
-        response = requests.get(
-            "https://api.mapbox.com/geocoding/v4/mapbox.places/{text}.json?"
+        get_string = "https://api.mapbox.com/geocoding/v5/mapbox.places/{text}.json?"\
             "types=address&{boundary}&{proximity}&{access}".format(
-                text=str(loc[-1]),
+                text=str(loc[0]),
                 boundary=self.boundaries,
                 proximity=self.proximity,
                 access=secrets.return_mapbox_key(),
             )
+        response = requests.get(
+            get_string
         ).json()
+        if ("message" in response.keys()) and (response["message"] == "Not Found"):
+            raise ValueError("mapbox not running")
         if (len(response["features"]) == 0) or (
             response["features"][0]["relevance"] <= 0.5
         ):
@@ -135,6 +136,9 @@ class LocationCoordinates:
         self.place_name = place_name
         self.long = None
         self.lat = None
+
+    def __repr__(self):
+        return "{}: lat = {}, long = {}".format(self.place_name, self.lat, self.long)
 
 
 class LocationCoordinatesMapbox(LocationCoordinates):

@@ -8,7 +8,9 @@ class StooperRestFrameworkConfig(AppConfig):
         from stooper.stooper_rest_framework.models import PostLocation
         from stooper.pull_metadata.PullAndParse import PullAndParse
 
-        PullAndParse().scrape()
+        pap = PullAndParse()
+        pap.scrape()
+        pap.parse()
         """
         PostLocation.objects.create(
             id="new_id",

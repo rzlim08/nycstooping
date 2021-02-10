@@ -3,9 +3,9 @@ import sys
 
 
 class LocationData:
-    def __init__(self, text):
+    def __init__(self, location_model, text):
         self.text = text
-        self.nlp = spacy.load("models")
+        self.nlp = spacy.load(location_model)
 
     def run_spacy(self):
         doc = self.nlp(self.text)
