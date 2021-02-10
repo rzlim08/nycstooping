@@ -10,10 +10,14 @@ class StooperRestFrameworkConfig(AppConfig):
 
         pap = PullAndParse()
         pap.scrape()
-        pap.parse()
-        """
-        PostLocation.objects.create(
-            id="new_id",
-            long="-1.0",
-            lat="-1.0"
-        )"""
+        posts = pap.parse()
+        for post in posts:
+            PostLocation.objects.get_or_create(
+                id=post.get_meta("id"),
+                posted_at=post.datetime,
+                display_url=post.get_meta("display_url"),
+                insta_account=post.get_meta("username"),
+                caption= post.get_meta("caption"),
+                long= post.loc.long,
+                lat= post.loc.lat,
+            )

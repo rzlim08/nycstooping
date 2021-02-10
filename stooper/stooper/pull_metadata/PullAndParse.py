@@ -22,10 +22,11 @@ class PullAndParse:
             print(output, error)
 
     def parse(self):
+        posts = []
         for account in self.accounts:
             json_file = "stooper/pull_metadata/{}.json".format(account)
             mdp = MetaDataParser(json_file)
             mdp()
-            for m in mdp.image_meta:
-                print(m.location, m.location_text)
+            posts.extend(mdp.image_meta)
 
+        return posts

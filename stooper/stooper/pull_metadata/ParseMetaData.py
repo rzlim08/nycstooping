@@ -1,6 +1,7 @@
 import json
 import sys
 from stooper.pull_metadata.LocationData import LocationData
+from stooper.stooper_rest_framework.models import PostLocation
 from stooper import secrets
 import requests
 
@@ -21,6 +22,8 @@ class MetaDataParser:
     def extract_relevant_info(self):
         images = []
         for image_json in self.json["GraphImages"]:
+            if PostLocation.object.filter(id=image_json["id"]).exists():
+                continue
             subdict = {
                 k: v
                 for k, v in image_json.items()

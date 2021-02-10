@@ -1,5 +1,4 @@
 import spacy
-import sys
 
 
 class LocationData:
@@ -12,5 +11,3 @@ class LocationData:
         return doc.ents
 
 
-if __name__ == "__main__":
-    ttl = LocationData(sys.argv[1])
