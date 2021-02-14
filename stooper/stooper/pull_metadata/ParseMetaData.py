@@ -14,13 +14,14 @@ class MetaDataParser:
         self.jsonfile = jsonfile
         self.json = None
         self.image_meta = []
-        self.read_json()
+
 
     def read_json(self):
         with open(self.jsonfile) as f:
             self.json = json.load(f)
 
     def extract_relevant_info(self):
+        self.read_json()
         images = []
         for image_json in self.json["GraphImages"]:
             if PostLocation.objects.filter(id=image_json["id"]).exists():
@@ -31,6 +32,7 @@ class MetaDataParser:
                 if k
                 in [
                     "__typename",
+                    "accessibility_caption",
                     "display_url",
                     "id",
                     "location",
@@ -88,13 +90,15 @@ class InstagramPost:
         return self.subdict[fieldname]
 
     def call_google_maps(self, loc):
-        response = requests.get(
-            "https://maps.googleapis.com/maps/api/geocode/json?address={text}"
+        get_string = self.format_get_request("https://maps.googleapis.com/maps/api/geocode/json?address={text}"
             "&{bounding}&key={key}".format(
                 text=loc[0],
                 bounding=self.google_maps_coords,
                 key=secrets.return_google_api_key(),
             )
+        )
+        response = requests.get(
+            get_string
         ).json()
         if len(response["results"]) == 0:
             print("Failed google results: ", response)
@@ -105,14 +109,18 @@ class InstagramPost:
                 best_res["geometry"]["location"], best_res["formatted_address"]
             )
 
+    def format_get_request(self, string):
+        return string.replace("#", "%23")
+
     def call_mapbox(self, loc):
-        get_string = "https://api.mapbox.com/geocoding/v5/mapbox.places/{text}.json?"\
+        get_string = self.format_get_request("https://api.mapbox.com/geocoding/v5/mapbox.places/{text}.json?"\
             "types=address&{boundary}&{proximity}&{access}".format(
                 text=str(loc[0]),
                 boundary=self.boundaries,
                 proximity=self.proximity,
                 access=secrets.return_mapbox_key(),
-            )
+            ))
+
         response = requests.get(
             get_string
         ).json()

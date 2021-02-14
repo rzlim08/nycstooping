@@ -6,9 +6,9 @@ from stooper.stooper_rest_framework.serializers import PostLocationSerializer
 
 
 class PostLocationViewSet(viewsets.ModelViewSet):
-    queryset = PostLocation.objects.all()
+    queryset = PostLocation.objects.all().order_by("-posted_at")
     serializer_class = PostLocationSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.BasePermission]
 
 
 class UserViewSet(viewsets.ModelViewSet):

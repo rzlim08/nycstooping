@@ -13,17 +13,26 @@ class PullAndParse:
         self.accounts = ["curbalertnyc", "stoopingnyc"]
 
     def scrape(self):
-        for account in self.accounts:
-            cmd = (
-                "instagram-scraper {account} -u a_pro_stooper -p {password} --include-location "
-                "--cookiejar cookies_aps --media-types none"
-                " --latest -m5 --retry-forever -d stooper/pull_metadata".format(
-                    account=account, password=secrets.return_pass()
-                )
+        cmd = (
+            "instagram-scraper {account} -u a_pro_stooper -p {password} --include-location "
+            "--cookiejar cookies_ps2 --media-types none"
+            " -m100 --retry-forever -d stooper/pull_metadata".format(
+                account=",".join(self.accounts), password=secrets.return_pass()
             )
-            process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
-            output, error = process.communicate()
-            print(output, error)
+        )
+        """
+        cmd = (
+            "instagram-scraper {account} --include-location "
+            "--cookiejar cookies_aps --media-types none"
+            " -m5 -d stooper/pull_metadata".format(
+                account=",".join(self.accounts)
+            )
+        )
+        
+        """
+        process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
+        output, error = process.communicate()
+        print(output, error)
 
     def parse(self):
         posts = []

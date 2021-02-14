@@ -151,4 +151,4 @@ migrations
 models/
 secrets.py
 *.json
-cookies_aps
+cookies_*
