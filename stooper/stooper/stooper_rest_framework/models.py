@@ -12,6 +12,10 @@ class PostLocation(models.Model):
     caption = models.TextField()
     lat = models.DecimalField(max_digits=9, decimal_places=6)
     long = models.DecimalField(max_digits=9, decimal_places=6)
+    accessibility_field = models.TextField(null=True)
+    location_text = models.TextField(default="")
+    pred_location = models.TextField(default="")
+
 
     class Meta:
         ordering = ["posted_at"]

@@ -3,8 +3,7 @@ from stooper.pull_metadata.ParseMetaData import MetaDataParser
 from stooper.stooper_rest_framework.models import PostLocation
 from apscheduler.schedulers.background import BackgroundScheduler
 import subprocess
-import schedule
-import time
+
 
 
 class PullAndParse:
@@ -16,7 +15,7 @@ class PullAndParse:
         cmd = (
             "instagram-scraper {account} -u a_pro_stooper -p {password} --include-location "
             "--cookiejar cookies_ps2 --media-types none"
-            " -m100 --retry-forever -d stooper/pull_metadata".format(
+            " -m50 --retry-forever -d stooper/pull_metadata".format(
                 account=",".join(self.accounts), password=secrets.return_pass()
             )
         )
@@ -49,25 +48,25 @@ class PullAndParse:
         posts = self.parse()
         for post in posts:
             if post.location is None:
-                PostLocation.objects.get_or_create(
-                    id=post.get_meta("id"),
-                    posted_at=str(post.datetime),
-                    display_url=post.get_meta("display_url"),
-                    insta_account=post.get_meta("username"),
-                    caption=post.get_meta("caption"),
-                    long=-1,
-                    lat=-1,
-                )
+                long = -1
+                lat = -1
+                place_name = ""
             else:
-                PostLocation.objects.get_or_create(
-                    id=post.get_meta("id"),
-                    posted_at=str(post.datetime),
-                    display_url=post.get_meta("display_url"),
-                    insta_account=post.get_meta("username"),
-                    caption=post.get_meta("caption"),
-                    long=post.location.long,
-                    lat=post.location.lat,
-                )
+                long = post.location.long
+                lat = post.location.lat
+                place_name = post.location.place_name
+
+            PostLocation.objects.get_or_create(
+                id=post.get_meta("id"),
+                posted_at=str(post.datetime),
+                display_url=post.get_meta("display_url"),
+                insta_account=post.get_meta("username"),
+                caption=post.get_meta("caption"),
+                long=long,
+                lat=lat,
+                location_text = post.location_text,
+                pred_location=place_name,
+            )
 
     def schedule(self, timer=5):
         scheduler = BackgroundScheduler()

@@ -1,82 +1,6 @@
-import json
-import sys
-from stooper.pull_metadata.LocationData import LocationData
-from stooper.stooper_rest_framework.models import PostLocation
 from stooper import secrets
 from datetime import datetime
 import requests
-
-
-class MetaDataParser:
-    """Parse MetaData file from instagram scraper"""
-
-    def __init__(self, jsonfile):
-        self.jsonfile = jsonfile
-        self.json = None
-        self.image_meta = []
-
-
-    def read_json(self):
-        with open(self.jsonfile) as f:
-            self.json = json.load(f)
-
-    def extract_relevant_info(self):
-        self.read_json()
-        images = []
-        for image_json in self.json["GraphImages"]:
-            if PostLocation.objects.filter(id=image_json["id"]).exists():
-                continue
-            if "stoopingsuccess" in image_json["tags"]:
-                continue
-            subdict = {
-                k: v
-                for k, v in image_json.items()
-                if k
-                in [
-                    "__typename",
-                    "accessibility_caption",
-                    "display_url",
-                    "id",
-                    "location",
-                    "owner",
-                    "shortcode",
-                    "tags",
-                    "taken_at_timestamp",
-                    "urls",
-                    "username",
-                ]
-            }
-            if len(image_json["edge_media_to_caption"]["edges"]) < 1:
-                subdict["caption"] = None
-            elif len(image_json["edge_media_to_caption"]["edges"]) == 1:
-                subdict["caption"] = image_json["edge_media_to_caption"]["edges"][0][
-                    "node"
-                ]["text"]
-            else:
-                raise ValueError("more than one caption")
-            post = InstagramPost(subdict)
-            post.timestamp_to_date()
-            images.append(post)
-        self.image_meta = images
-
-    def get_locations(self):
-        for insta_post in self.image_meta:
-            ld = LocationData("stooper/pull_metadata/models", insta_post.get_meta("caption"))
-            loc = ld.run_spacy()
-            if len(loc) > 0:
-                insta_post.add_location_text(loc)
-                location_data = insta_post.call_mapbox(loc)
-                if location_data is None:
-                    location_data = insta_post.call_google_maps(loc)
-
-                insta_post.add_location(location_data)
-            else:
-                insta_post.add_location_text("")
-                insta_post.add_location(None)
-
-    def __call__(self):
-        self.extract_relevant_info()
-        self.get_locations()
 
 
 class InstagramPost:
@@ -113,7 +37,8 @@ class InstagramPost:
                     best_res["geometry"]["location"], best_res["formatted_address"]
                 )
             else:
-                self.call_google_maps([str(loc[0]) + " nyc"], recall=1)
+                return self.call_google_maps([loc[0] + " nyc"], recall=1)
+
 
     def format_get_request(self, string):
         return string.replace("#", "%23")
@@ -175,6 +100,5 @@ class LocationCoordinatesGoogle(LocationCoordinates):
 
 
 if __name__ == "__main__":
-    jsonfile = sys.argv[1]
-    mdp = MetaDataParser(jsonfile)
-    mdp()
+    ip = InstagramPost({})
+    ip.call_google_maps(["Dean and Smith"])

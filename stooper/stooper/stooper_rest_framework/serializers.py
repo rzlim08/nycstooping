@@ -27,4 +27,6 @@ class PostLocationSerializer(serializers.ModelSerializer):
             "caption",
             "lat",
             "long",
+            "location_text",
+            "pred_location"
         ]
