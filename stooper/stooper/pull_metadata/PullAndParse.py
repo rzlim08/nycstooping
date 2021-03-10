@@ -9,7 +9,7 @@ import subprocess
 class PullAndParse:
     def __init__(self):
         # self.accounts = ['nycfreeatthecurb','stoopingnyc', 'stoopingupperwestside','curbalertnyc', 'curbalertqueens']
-        self.accounts = ["curbalertnyc", "stoopingnyc"]
+        self.accounts = ["curbalertnyc", "stoopingnyc", "nycfreeatthecurb"]
 
     def scrape(self):
         cmd = (
@@ -66,6 +66,7 @@ class PullAndParse:
                 lat=lat,
                 location_text = post.location_text,
                 pred_location=place_name,
+                short_code = post.get_meta("shortcode"),
             )
 
     def schedule(self, timer=5):

@@ -108,7 +108,7 @@ class InstagramPost:
             return None
         else:
             best_res = response["results"][0]
-            if "NY" in best_res["formatted_address"].lower() or "new york" in best_res["formatted_address"] or recall:
+            if "ny" in best_res["formatted_address"].lower() or "new york" in best_res["formatted_address"].lower() or recall:
                 return LocationCoordinatesGoogle(
                     best_res["geometry"]["location"], best_res["formatted_address"]
                 )
@@ -116,7 +116,7 @@ class InstagramPost:
                 self.call_google_maps([str(loc[0]) + " nyc"], recall=1)
 
     def format_get_request(self, string):
-        return string.replace("#", "%23")
+        return string.replace("#", "%23").replace(";", "%3b")
 
     def call_mapbox(self, loc):
         get_string = self.format_get_request("https://api.mapbox.com/geocoding/v5/mapbox.places/{text}.json?"\
@@ -131,8 +131,8 @@ class InstagramPost:
             get_string
         ).json()
         if ("message" in response.keys()) and (response["message"] == "Not Found"):
-            raise ValueError("mapbox not running")
-        if (len(response["features"]) == 0) or (
+            return None
+        if ("features" not in response.keys()) or (len(response["features"]) == 0) or (
             response["features"][0]["relevance"] <= 0.5
         ):
             return None

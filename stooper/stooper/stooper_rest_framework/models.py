@@ -15,6 +15,7 @@ class PostLocation(models.Model):
     accessibility_field = models.TextField(null=True)
     location_text = models.TextField(default="")
     pred_location = models.TextField(default="")
+    short_code = models.TextField(default="")
 
 
     class Meta:
