@@ -5,7 +5,6 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import subprocess
 
 
-
 class PullAndParse:
     def __init__(self):
         # self.accounts = ['nycfreeatthecurb','stoopingnyc', 'stoopingupperwestside','curbalertnyc', 'curbalertqueens']
@@ -64,12 +63,12 @@ class PullAndParse:
                 caption=post.get_meta("caption"),
                 long=long,
                 lat=lat,
-                location_text = post.location_text,
+                location_text=post.location_text,
                 pred_location=place_name,
-                short_code = post.get_meta("shortcode"),
+                short_code=post.get_meta("shortcode"),
             )
 
     def schedule(self, timer=5):
         scheduler = BackgroundScheduler()
-        scheduler.add_job(self.start, 'interval', minutes=timer)
+        scheduler.add_job(self.start, "interval", minutes=timer)
         scheduler.start()

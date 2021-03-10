@@ -6,7 +6,7 @@ class StooperRestFrameworkConfig(AppConfig):
 
     def ready(self):
         from stooper.pull_metadata.PullAndParse import PullAndParse
-        pap = PullAndParse()
-        #pap.start()
-        pap.schedule(240)
 
+        pap = PullAndParse()
+        pap.start()
+        pap.schedule(240)

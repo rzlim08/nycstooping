@@ -29,9 +29,8 @@ class PostLocationSerializer(serializers.ModelSerializer):
             "long",
             "location_text",
             "pred_location",
-            "short_code"
+            "short_code",
         ]
-
 
     def update(self, instance, validated_data):
         postlocation = PostLocation.objects.get(pk=instance.id)

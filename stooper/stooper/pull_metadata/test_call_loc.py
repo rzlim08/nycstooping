@@ -17,44 +17,46 @@ class InstagramPost:
         return self.subdict[fieldname]
 
     def call_google_maps(self, loc, recall=0):
-        get_string = self.format_get_request("https://maps.googleapis.com/maps/api/geocode/json?address={text}"
+        get_string = self.format_get_request(
+            "https://maps.googleapis.com/maps/api/geocode/json?address={text}"
             "&{bounding}&key={key}".format(
                 text=loc[0],
                 bounding=self.google_maps_coords,
                 key=secrets.return_google_api_key(),
             )
         )
-        response = requests.get(
-            get_string
-        ).json()
+        response = requests.get(get_string).json()
         if len(response["results"]) == 0:
             print("Failed google results: ", response)
             return None
         else:
             best_res = response["results"][0]
-            if "NY" in best_res["formatted_address"].lower() or "new york" in best_res["formatted_address"] or recall:
+            if (
+                "NY" in best_res["formatted_address"].lower()
+                or "new york" in best_res["formatted_address"]
+                or recall
+            ):
                 return LocationCoordinatesGoogle(
                     best_res["geometry"]["location"], best_res["formatted_address"]
                 )
             else:
                 return self.call_google_maps([loc[0] + " nyc"], recall=1)
 
-
     def format_get_request(self, string):
         return string.replace("#", "%23")
 
     def call_mapbox(self, loc):
-        get_string = self.format_get_request("https://api.mapbox.com/geocoding/v5/mapbox.places/{text}.json?"\
+        get_string = self.format_get_request(
+            "https://api.mapbox.com/geocoding/v5/mapbox.places/{text}.json?"
             "types=address&{boundary}&{proximity}&{access}".format(
                 text=str(loc[0]),
                 boundary=self.boundaries,
                 proximity=self.proximity,
                 access=secrets.return_mapbox_key(),
-            ))
+            )
+        )
 
-        response = requests.get(
-            get_string
-        ).json()
+        response = requests.get(get_string).json()
         if ("message" in response.keys()) and (response["message"] == "Not Found"):
             raise ValueError("mapbox not running")
         if (len(response["features"]) == 0) or (

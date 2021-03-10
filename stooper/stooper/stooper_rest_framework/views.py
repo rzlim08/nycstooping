@@ -11,12 +11,13 @@ class PostLocationViewSet(viewsets.ModelViewSet):
     queryset = PostLocation.objects.all().order_by("-posted_at")
     serializer_class = PostLocationSerializer
     permission_classes = [permissions.BasePermission]
-    http_method_names = ['get', 'post', 'patch']
+    http_method_names = ["get", "post", "patch"]
 
     def patch(self, request, pk):
         postlocation = PostLocation.get(pk)
-        serializer = PostLocationSerializer(postlocation, data=request.data,
-                                         partial=True)  # set partial=True to update a data partially
+        serializer = PostLocationSerializer(
+            postlocation, data=request.data, partial=True
+        )  # set partial=True to update a data partially
         if serializer.is_valid():
             serializer.save()
             return Response(status=status.HTTP_202_ACCEPTED)

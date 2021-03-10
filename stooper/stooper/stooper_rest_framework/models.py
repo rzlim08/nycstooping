@@ -1,7 +1,5 @@
 from django.db import models
 
-# Create your models here.
-
 
 class PostLocation(models.Model):
     created = models.DateTimeField(auto_now_add=True)
@@ -16,7 +14,6 @@ class PostLocation(models.Model):
     location_text = models.TextField(default="")
     pred_location = models.TextField(default="")
     short_code = models.TextField(default="")
-
 
     class Meta:
         ordering = ["posted_at"]
