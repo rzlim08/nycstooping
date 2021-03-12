@@ -13,7 +13,7 @@ class PullAndParse:
     def scrape(self):
         cmd = (
             "instagram-scraper {account} -u a_pro_stooper -p {password} --include-location "
-            "--cookiejar cookies_ps2 --media-types none"
+            "--cookiejar cookies_ps3 --media-types none"
             " -m50 --retry-forever -d stooper/pull_metadata".format(
                 account=",".join(self.accounts), password=secrets.return_pass()
             )

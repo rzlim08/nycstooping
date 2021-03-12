@@ -1,6 +1,6 @@
 import spacy
 import sys
-
+import re
 
 class LocationData:
     def __init__(self, location_model, text):
@@ -12,9 +12,12 @@ class LocationData:
         ents = []
         for ent in doc.ents:
             if ent.label_ == "TRIANGULATION":
-                intersections = ent.text.lower().split("between")
-                first_rd = intersections[0]
-        return doc.ents
+                caption = ent.text.lower()
+                caption = re.sub('between|btwn|btw|bw', 'and', caption)
+                ents.append(caption)
+            else:
+                ents.append(ent.text)
+        return ents
 
 
 if __name__ == "__main__":

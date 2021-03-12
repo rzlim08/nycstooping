@@ -94,18 +94,21 @@ class InstagramPost:
         return self.subdict[fieldname]
 
     def call_google_maps(self, loc, recall=0):
+        loc = " ".join(loc)
         get_string = self.format_get_request(
             "https://maps.googleapis.com/maps/api/geocode/json?address={text}"
             "&{bounding}&key={key}".format(
-                text=loc[0],
+                text=loc,
                 bounding=self.google_maps_coords,
                 key=secrets.return_google_api_key(),
             )
         )
         response = requests.get(get_string).json()
-        if len(response["results"]) == 0:
-            print("Failed google results: ", response)
+        if len(response["results"]) == 0 and recall:
+            print("Failed google results: ", response, loc)
             return None
+        elif len(response["results"]) == 0:
+            return self.call_google_maps([loc + " nyc"], recall=1)
         else:
             best_res = response["results"][0]
             if (
@@ -117,12 +120,14 @@ class InstagramPost:
                     best_res["geometry"]["location"], best_res["formatted_address"]
                 )
             else:
-                self.call_google_maps([str(loc[0]) + " nyc"], recall=1)
+                return self.call_google_maps([loc + " nyc"], recall=1)
 
     def format_get_request(self, string):
         return string.replace("#", "%23").replace(";", "%3b")
 
     def call_mapbox(self, loc):
+        # TODO: remove mapbox completely
+        return None
         get_string = self.format_get_request(
             "https://api.mapbox.com/geocoding/v5/mapbox.places/{text}.json?"
             "types=address&{boundary}&{proximity}&{access}".format(
