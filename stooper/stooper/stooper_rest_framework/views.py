@@ -11,7 +11,7 @@ class PostLocationViewSet(viewsets.ModelViewSet):
     queryset = PostLocation.objects.all().order_by("-posted_at")
     serializer_class = PostLocationSerializer
     permission_classes = [permissions.BasePermission]
-    http_method_names = ["get", "post", "patch"]
+    http_method_names = ["get", "post", "patch", "options"]
 
     def patch(self, request, pk):
         postlocation = PostLocation.get(pk)

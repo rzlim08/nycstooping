@@ -1,6 +1,7 @@
 import requests
 import re
 from stooper.pull_metadata.ParseMetaData import MetaDataParser
+from stooper.secrets import return_rapid_api_key
 
 
 class APIParser(MetaDataParser):
@@ -22,7 +23,7 @@ class APIParser(MetaDataParser):
         url = "https://instagram40.p.rapidapi.com/account-feed"
         querystring = {"username": self.username}
         headers = {
-            'x-rapidapi-key': "243a4aba8cmsh45a87603a178c46p166f80jsn4f41c7ea3703",
+            'x-rapidapi-key': return_rapid_api_key(),
             'x-rapidapi-host': "instagram40.p.rapidapi.com"
         }
 
