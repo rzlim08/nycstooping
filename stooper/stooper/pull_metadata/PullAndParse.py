@@ -1,5 +1,6 @@
 from stooper import secrets
 from stooper.pull_metadata.ParseMetaData import MetaDataParser
+from stooper.pull_metadata.InstaAPI import APIParser
 from stooper.stooper_rest_framework.models import PostLocation
 from apscheduler.schedulers.background import BackgroundScheduler
 import subprocess
@@ -36,14 +37,15 @@ class PullAndParse:
         posts = []
         for account in self.accounts:
             json_file = "stooper/pull_metadata/{}.json".format(account)
-            mdp = MetaDataParser(json_file)
+            #mdp = MetaDataParser(json_file)
+            mdp = APIParser(account)
             mdp()
             posts.extend(mdp.image_meta)
 
         return posts
 
     def start(self):
-        self.scrape()
+        #self.scrape()
         posts = self.parse()
         for post in posts:
             if post.location is None:

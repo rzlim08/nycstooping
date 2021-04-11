@@ -51,6 +51,7 @@ class MetaDataParser:
                 subdict["caption"] = image_json["edge_media_to_caption"]["edges"][0][
                     "node"
                 ]["text"]
+
             else:
                 raise ValueError("more than one caption")
             post = InstagramPost(subdict)
@@ -66,10 +67,7 @@ class MetaDataParser:
             loc = ld.run_spacy()
             if len(loc) > 0:
                 insta_post.add_location_text(loc)
-                location_data = insta_post.call_mapbox(loc)
-                if location_data is None:
-                    location_data = insta_post.call_google_maps(loc)
-
+                location_data = insta_post.call_google_maps(loc)
                 insta_post.add_location(location_data)
             else:
                 insta_post.add_location_text("")
@@ -104,52 +102,39 @@ class InstagramPost:
             )
         )
         response = requests.get(get_string).json()
-        if len(response["results"]) == 0 and recall:
+        response = self.filter_responses(response["results"])
+        if len(response) == 0 and recall:
             print("Failed google results: ", response, loc)
             return None
-        elif len(response["results"]) == 0:
+        elif len(response) == 0:
             return self.call_google_maps([loc + " nyc"], recall=1)
         else:
-            best_res = response["results"][0]
+            best_res = response[0]
+            return LocationCoordinatesGoogle(
+                best_res["geometry"]["location"], best_res["formatted_address"]
+            )
+
+    @staticmethod
+    def filter_responses(responses):
+        valid_responses = []
+        for response in responses:
+            loc = response["geometry"]["location"]
+            lat = loc["lat"]
+            lng = loc["lng"]
             if (
-                "ny" in best_res["formatted_address"].lower()
-                or "new york" in best_res["formatted_address"].lower()
-                or recall
-            ):
-                return LocationCoordinatesGoogle(
-                    best_res["geometry"]["location"], best_res["formatted_address"]
+                (40.501 <= lat <= 40.89)
+                and (-74.26 <= lng < -73.74)
+                and (
+                    "ny" in response["formatted_address"].lower()
+                    or "new york" in response["formatted_address"].lower()
                 )
-            else:
-                return self.call_google_maps([loc + " nyc"], recall=1)
+            ):
+                valid_responses.append(response)
+
+        return valid_responses
 
     def format_get_request(self, string):
         return string.replace("#", "%23").replace(";", "%3b")
-
-    def call_mapbox(self, loc):
-        # TODO: remove mapbox completely
-        return None
-        get_string = self.format_get_request(
-            "https://api.mapbox.com/geocoding/v5/mapbox.places/{text}.json?"
-            "types=address&{boundary}&{proximity}&{access}".format(
-                text=str(loc[0]),
-                boundary=self.boundaries,
-                proximity=self.proximity,
-                access=secrets.return_mapbox_key(),
-            )
-        )
-
-        response = requests.get(get_string).json()
-        if ("message" in response.keys()) and (response["message"] == "Not Found"):
-            return None
-        if (
-            ("features" not in response.keys())
-            or (len(response["features"]) == 0)
-            or (response["features"][0]["relevance"] <= 0.5)
-        ):
-            return None
-        else:
-            correct = response["features"][0]
-            return LocationCoordinatesMapbox(correct["center"], correct["place_name"])
 
     def add_location(self, loc):
         self.location = loc
